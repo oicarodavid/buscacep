@@ -3,16 +3,13 @@ import { createShadowRootUi } from "wxt/utils/content-script-ui/shadow-root";
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { CepAutocompleteContainer } from "../../src/presentation/content/CepAutocompleteContainer";
-import {
-  domFormScannerService,
-  PADROES_SELECAO_CEP
-} from "../../src/infrastructure/dom/dom-form-scanner.service";
+import { platformManagerService } from "../../src/infrastructure/platforms/platform-manager.service";
 import "./style.css";
 
 /**
  * Ponto de entrada do Content Script da extensão.
- * Injeta a interface de busca de CEP ao lado do campo identificado no formulário
- * utilizando Shadow DOM para isolar completamente o Tailwind v4 e HeroUI da página hospedeira.
+ * Detecta a plataforma ativa (SpeedGov/GeneXus ou Web genérica) em tempo de execução
+ * e injeta a interface de autocompletar ao lado do campo de CEP identificado.
  */
 export default defineContentScript({
   matches: ["<all_urls>"],
@@ -25,7 +22,8 @@ export default defineContentScript({
     const tentarMontarUi = async (): Promise<boolean> => {
       if (montado) return true;
 
-      const campoCep = domFormScannerService.encontrarCampoFormulario(PADROES_SELECAO_CEP);
+      const adapter = platformManagerService.obterAdapter(document);
+      const campoCep = adapter.encontrarCampoCep();
       if (!campoCep) {
         return false;
       }

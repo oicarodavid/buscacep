@@ -4,11 +4,7 @@ import {
   validarCamposEnderecoParaConsulta
 } from "../../../core/domain/entities/endereco.entity";
 import { browserMessagingClient } from "../../../infrastructure/messaging/browser-messaging.client";
-import {
-  domFormScannerService,
-  PADROES_SELECAO_CEP
-} from "../../../infrastructure/dom/dom-form-scanner.service";
-import { domInputFillerService } from "../../../infrastructure/dom/dom-input-filler.service";
+import { platformManagerService } from "../../../infrastructure/platforms/platform-manager.service";
 
 /**
  * Retorno estruturado do hook useCepAutocomplete para desacoplamento total da UI.
@@ -58,8 +54,9 @@ export function useCepAutocomplete(): UseCepAutocompleteReturn {
 
   const handleBuscarCep = useCallback(async () => {
     definirMensagemComAutoDismiss(null);
+    const adapter = platformManagerService.obterAdapter(document);
     const { logradouro, cidade, uf, bairro, numero, campoCep } =
-      domFormScannerService.extrairDadosEndereco();
+      adapter.extrairDadosEndereco();
 
     // Se o campo de CEP nem sequer existir no formulário, exibe o alerta flutuante de erro
     if (!campoCep) {
@@ -105,13 +102,12 @@ export function useCepAutocomplete(): UseCepAutocompleteReturn {
   }, [definirMensagemComAutoDismiss]);
 
   const handleConfirmarPreenchimento = useCallback((cepEscolhido: string) => {
-    const campoCep = domFormScannerService.encontrarCampoFormulario(
-      PADROES_SELECAO_CEP
-    ) as HTMLInputElement | null;
+    const adapter = platformManagerService.obterAdapter(document);
+    const campoCep = adapter.encontrarCampoCep();
 
     if (campoCep) {
       const cepApenasNumeros = cepEscolhido.replace(/\D/g, "");
-      domInputFillerService.preencherInputReativo(campoCep, cepApenasNumeros);
+      adapter.preencherCep(campoCep, cepApenasNumeros);
       setExibirModal(false);
       setResultados([]);
       setMensagemModal(null);
